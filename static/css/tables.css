@@ -1,0 +1,21 @@
+th, td {
+    text-align: center;
+  }
+
+#db-stats, #db-stats th, #db-stats td {
+  border: 1px solid lightgrey;
+  border-collapse: collapse;
+  padding: 6px;
+}
+
+#db-stats {
+    width: 100%;
+}
+
+#db-stats th {
+    background-color: #e6e6e6;
+}
+
+.db {
+    background-color: #e6e6e6;
+}

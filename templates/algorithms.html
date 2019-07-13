@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+{% block title %} {{title}} {% endblock %}
+{% block content %}
+<h2>Algorithm Overview</h2>
+<br><br>
+<p class="starter-info">KARP</p>
+<div class="f-container">
+    $$ K = { \sum^m_{i=1} \alpha_i \over \sum^n_{j=1} \beta_j } \cdot { \sqrt {m \over t} } \cdot {10^6} $$
+</div>
+<br>
+<ul class="alg-info">
+    <li>KARP is decribed as the sum of intensities of a substrate group ($ \sum \alpha_i $) relative to that of all phosphosites (n) in the dataset ($ \sum \beta_j $).</li>
+    <li>The K score is normalised in terms of the total number of sites from the dataset found for a kinase (m) and total number of sites in the database for that kinase (t).</li>
+    <li>It is an absolute measure of activity; KARP does not rely on comparison of values between seperate groups, as seen above.</li>
+    <li>High K-scores indicate an upregulated kinase activity.</li>
+</ul>
+<br>
+<p class="starter-info">Z-Test</p>
+<div class="f-container">
+  $$Z = {(\bar s - \bar p) \sqrt m \over \delta}$$ 
+</div>
+<br>
+<ul class="alg-info">
+    <li>Z-Test is a parametric test; it is assumed the resulting scores are normally distributed.</li>
+    <li>It calculates the difference between the mean log2(FC) of a substrate group ($\bar s$) and the mean log2(FC) of all substrates in the dataset ($ \bar p$).</li>
+    <li>The Z score is normalised in terms of the number of phosphosites from the dataset found for a given kinase ($\sqrt m$) and the standard deviation of all phosphosite log2(FC) values ($\delta$).</li>
+    <li>For a FC = treatment/control, a positive Z-Score denotes a kinase with an upregulated activity. The opposite is true for negative scores.</li>
+</ul>
+<br>
+<p class="starter-info">Kolmogorov-Smirnov (KS)</p>
+<div class="f-container"><img class="responsive-plot" src="{{ url_for('static', filename='images/formulas/distribution.svg') }}"></div>
+<br>
+<ul class="alg-info">
+    <li>KS test is a non-parametric statistical test.</li>
+    <li>It examines phosphorylation differences between substrate and non-substrate log2(FC) distributions of a given kinase.</li>
+    <li>The test calculates the maximum difference (vertical distance) in cumulative fraction between the two distribution groups.</li>
+    <li>This difference is denoted as the KS statistic and is reported alongside a p-value.</li>
+</ul>
+{% endblock %}

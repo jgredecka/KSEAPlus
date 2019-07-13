@@ -1,0 +1,234 @@
+body {
+background: "#ffffff";
+font-size: 17px;
+font-family: Helvetica, Arial, sans-serif;
+line-height: 1.85;
+color: #4D4D4D;
+
+}
+
+.bg { 
+    background-color: #F5F4F3;
+    padding: 38px;
+}
+
+#svg-logo {
+    position: absolute;
+    top: 3px;
+    left: 5px;
+    width: 265px;
+
+}
+
+.container {
+    position: relative;
+    padding-top: 45px; 
+    padding-bottom: 45px;
+   
+}
+
+.navbar {
+    background-color: #4AABF3 !important;
+   
+}
+
+.nav-item {
+    padding: 0px 25px;
+}
+
+nav .navbar-nav li a {
+    display: block;
+    color: white !important;
+    font-size: 17px;
+    font-weight: bold; 
+}
+
+.nav-link:hover{
+    color: #19427F !important; 
+}
+
+@media only screen and (max-width: 480px) {
+    #svg-logo {
+         width: 165px;   
+    }
+    
+    .bg {
+        padding: 25px;
+    }
+}
+
+@media only screen and (max-width: 992px) {
+    .nav-item {
+         padding: 0px 0px;   
+    }
+}
+
+.p-border {
+    border-left: 4px solid #4AABF3;
+    padding-left: 10px;
+}
+
+.upload-border {
+    font-size: 16px;
+    border-style: solid solid solid solid;
+    border-width: 1px;
+    border-radius: 8px;
+    border-color: lightgray;
+    padding-top: 25px;
+    padding-right: 30px;
+    padding-left: 30px;
+    padding-bottom: 10px;
+    background: #F9F9F9;
+    width: 400px;
+}
+
+h2 {
+    font-family: Helvetica, Arial, sans-serif;
+    color: #19427F;
+    font-weight: bold;
+}
+
+.btn-primary {
+    background-color: #6DCBF7;
+    border: 0;
+    font-weight: bold;
+}
+
+.btn-primary:hover {
+    background-color: #85d6fc;
+}
+
+.btn-primary:active {
+    background-color: #85d6fc !important;
+}
+
+.flash {
+    color: indianred;
+}
+
+#js-errors {
+    padding-left: 5px;
+    padding-right: 5px;
+    font-size: 14px;
+    line-height: 1.4;
+    word-wrap:break-word;
+    color: indianred;
+    width: 400px;
+}
+
+.link {
+    color: #19427F;
+    line-height: 35px;
+}
+
+.fab {
+    font-size: 17px;
+    color: #19427F;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+}
+
+.fab:hover {
+    color: #4AABF3 !important;
+    cursor: pointer;
+}
+
+.far {
+    font-size: 17px;
+    color: #19427F;
+    position: absolute;
+    top: 10px;
+    right: 43px;
+}
+
+.far:hover {
+    color: #4AABF3 !important;
+    cursor: pointer;
+}
+
+.fas {
+    font-size: 18px;
+    padding-right: 5px;
+}
+
+.fa-cloud-download-alt {
+    color: #4AABF3;
+}
+
+.fa-check-double {
+    color: #4AABF3;
+}
+
+#upload-button {
+    color: white;
+}
+
+.upload_form {
+    font-size: 15px;
+    width: 100%;
+    padding: 1px;
+    border: 1px solid;
+    border-color: lightgray;
+    border-radius: 3px;
+}
+
+#preloader {
+    padding-top: 100px;
+}
+
+.spinner-grow {
+    background-color: #75D4FA;
+    width: 6rem; 
+    height: 6rem;
+}
+
+#reminder {
+    font-size: 18px; 
+    font-weight: bold !important; 
+    color: #19427F;
+}
+
+.check-points {
+    font-size: 16px;
+}
+
+#loading-text {
+    color: #19427F; 
+    text-align: center; 
+    font-size: 17px;
+}
+
+.starter-info {
+    font-size: 20px; 
+    font-weight: bold;
+    color: #19427F;
+}
+
+.f-container {
+    text-align: center;
+    font-size: 20px;
+    color: black;
+}
+
+.alg-info {
+    line-height: 1.8;
+
+}
+
+.slide {
+    width: auto;
+    height: auto;
+    overflow-x: auto;
+    overflow-y: hidden;
+    white-space: nowrap;
+}
+
+#plot-para {
+    display: none;
+}
+
+.responsive-plot {
+  max-width: 100%;
+  height: auto;
+}

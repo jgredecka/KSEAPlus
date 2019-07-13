@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+{% block title %} {{title}} {% endblock %}
+{% block content %}
+<h2>Getting Started</h2>
+<br>
+<p class="starter-info">Starter Pack</p>
+<p>Please familiarise yourself with the User Guide and sample phosphoproteomic datasets if you wish to learn more about how to use KSEAPlus:
+<br><br>
+<a href="{{ url_for('static', filename='starter-pack/KSEAPlus-User-Guide.pdf') }}" class="link" download><span class="fas fa-cloud-download-alt"></span><strong>User Guide (.pdf)</strong></a>
+<br>
+<a href="{{ url_for('static', filename='starter-pack/log2fc_sample.tsv') }}" class="link" download><span class="fas fa-cloud-download-alt"></span><strong>log2(FC) Sample Dataset (.tsv)</strong></a>
+<br>
+<a href="{{ url_for('static', filename='starter-pack/intensities_sample.tsv') }}" class="link" download><span class="fas fa-cloud-download-alt"></span><strong>Raw Intensity Sample Dataset (.tsv)</strong></a>
+</p>
+<br>
+<p class="starter-info">Choosing the Algorithm</p>
+<p>A brief overview of the implemented algorithms is available <a href="{{ url_for('algorithms') }}">here.</a></p>
+<br>
+<p class="starter-info">Choosing the Database</p>
+<p>Data quality may vary depending on the kinase-substrate database used. Our analysis shows that PDTS and EDGES databases contain a higher proportion of kinases associated with a substrate count (SC) of at least 5 when compared to PSP, as summarised in the table below. However, PhosphoSitePlus database is also known to contain only direct kinase-substrate relationships, as opposed to PDTS and EDGES where substrate targets can be both direct as well as downstream targets.</p>
+<div style="overflow-x:auto;">
+<table id="db-stats">
+    <tr>
+        <th class="blank-cell"></th>
+        <th>Unique K-S links</th>
+        <th>Total unique kinases (SC >= 1)</th>
+        <th>Total unique kinases (SC >= 5)</th>
+        <th>% Total unique kinases (SC >= 5) </th>
+    </tr>
+    <tr>
+        <td class="db"><strong>PSP</strong></td>
+        <td>10411</td>
+        <td>359</td>
+        <td>225</td>
+        <td>63</td>
+    </tr>
+    <tr>
+        <td class="db"><strong>PDTS</strong></td>
+        <td>19381</td>
+        <td>105</td>
+        <td>88</td>
+        <td>84</td>
+    </tr>
+    <tr>
+        <td class="db"><strong>EDGES</strong></td>
+        <td>16648</td>
+        <td>88</td>
+        <td>83</td>
+        <td>94</td>
+    </tr>
+</table>
+</div>
+{% endblock %}

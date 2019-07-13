@@ -1,0 +1,54 @@
+{% extends "layout.html" %}
+{% block title %} {{title}} {% endblock %}
+{% block content %}
+
+<h2>Your KSEA Results</h2>
+<br><br>
+<ul class="nav nav-tabs" id="myTab" role="tablist">
+  <li class="nav-item">
+    <a class="nav-link active" id="score-tab" data-toggle="tab" href="#score" role="tab" aria-controls="score" aria-selected="true">Kinase Score Data</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="links-tab" data-toggle="tab" href="#links" role="tab" aria-controls="links" aria-selected="false">Kinase-Substrate Relationships</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="graphs-tab" data-toggle="tab" href="#graphs" role="tab" aria-controls="graphs" aria-selected="false">Graphs</a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link" id="download-tab" data-toggle="tab" href="#download" role="tab" aria-controls="download" aria-selected="false">Download</a>
+  </li>
+</ul>
+<div class="tab-content" id="myTabContent">
+  <div class="tab-pane fade show active" id="score" role="tabpanel" aria-labelledby="score-tab">
+  <br><br>
+  <p>Multiple condition Kinase Score data available only as a downloadable .csv file. </p>
+  </div>
+  <div class="tab-pane fade" id="links" role="tabpanel" aria-labelledby="links-tab">
+  <br><br>
+  <p>Multiple condition Kinase-Substrate Relationship data available only as a downloadable .csv file.</p>
+  </div>
+  <div class="tab-pane fade" id="graphs" role="tabpanel" aria-labelledby="graphs-tab">
+  <br>
+  <div class="slide">
+  {% if "svg" in heatmap %}
+     <p style="text-align:center;">{{ heatmap|safe }}</p>
+  
+  {% else %}
+     <p>{{ heatmap }}</p>
+  {% endif %} 
+  </div>
+  </div>
+  <div class="tab-pane fade" id="download" role="tabpanel" aria-labelledby="download-tab">
+  <br><br>
+  {% if "svg" in heatmap %}
+    <a href="{{ url_for('fig_download') }}" class="link"><span class="fas fa-cloud-download-alt id"></span><strong>Kinase-Score Heatmap (.svg)</strong></a>
+  {% else %}
+    <a href="#" class="link"><span class="fas fa-cloud-download-alt id"></span><strong>Kinase-Score Heatmap (.svg)</strong></a>
+  {% endif %}
+  <br><br>
+  <a href="{{ url_for('download_scores') }}" class="link"><span class="fas fa-cloud-download-alt"></span><strong>Kinase-Score Data (.csv)</strong></a>
+  <br><br>
+  <a href="{{ url_for('download_links') }}" class="link"><span class="fas fa-cloud-download-alt"></span><strong>KS-Relationships Data (.csv)</strong></a>
+  </div>
+</div>
+{% endblock %}

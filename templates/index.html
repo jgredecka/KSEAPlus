@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% block title %} {{title}} {% endblock %}
+{% block content %}
+<div class="border-custom">
+<h2>Welcome to KSEAPlus!</h2>
+<br>
+<p class="p-border">KSEAPlus is a free computational tool designed for the inference of kinase activity based on the kinase substrate enrichment analysis (KSEA) methods. Currently, KSEAPlus features an implementation of a number of KSEA algorithms that have been published in peer-reviewed scientific journals. The algorithms include a Z-test based on the Z-score transformation, Kolmogorov-Smirnov test and KARP (Kinase Activity Ranking using Phosphoproteomics data) algorithm.  </p>
+<br>
+<h2>Citing KSEAPlus</h2>
+<br>
+<p class="p-border">When using data obtained through the application, please cite the following resources:
+<br><br>
+Hornbeck, P., Zhang, B., Murray, B., Kornhauser, J., Latham V., Skrzypek E. PhosphoSitePlus, 2014: mutations, PTMs and recalibrations. Nucleic Acids Res. 2015 43:D512-20.
+<br><br>
+Wiredja, D., Koyutürk, M. and Chance, M. (2017). The KSEA App: a web-based tool for kinase activity inference from quantitative phosphoproteomics. Bioinformatics, 33(21), pp.3489-3491.
+<br><br>
+Casado, P., Rodriguez-Prados, J., Cosulich, S., Guichard, S., Vanhaesebroeck, B., Joel, S. and Cutillas, P. (2013). Kinase-Substrate Enrichment Analysis Provides Insights into the Heterogeneity of Signaling Pathway Activation in Leukemia Cells. Science Signaling, 6(268).
+<br><br>
+Wilkes, E., Casado, P., Rajeeve, V. and Cutillas, P. (2017). Kinase activity ranking using phosphoproteomics data (KARP) quantifies the contribution of protein kinases to the regulation of cell viability. Molecular & Cellular Proteomics, 16(9).
+</p>
+<br>
+<h2>Acknowledgements</h2>
+<br>
+<p class="p-border">KSEAPlus application has been developed by Justyna Gredecka under the supervision of Dr Pedro Cutillas and Prof Conrad Bessant at Queen Mary University of London as part of the Bioinformatics MSc thesis.</p>
+</div>
+{% endblock %}

@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.0/jquery.validate.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.0/dist/additional-methods.min.js"></script>
+    <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
+
+    <title>{% block title %}{% endblock %} - KSEAPlus</title>
+    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/tables.css') }}">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.0/css/all.css" integrity="sha384-Mmxa0mLqhmOeaE8vgOSbKacftZcsNYDjQzuCOm6D02luYSzBG8vpaOykv9lFQ51Y" crossorigin="anonymous"> 
+
+  </head>
+    <body>
+      <div class="bg"><a href="{{ url_for('index') }}"><img id="svg-logo" src="{{ url_for('static', filename='images/logo/logo.svg') }}"></a>
+      <a href="#" data-toggle="tooltip" title="GitHub Source Code"><span class="fab fa-github"></span></a>
+      <a href="{{ url_for('contact') }}" data-toggle="tooltip" title="Contact Us"><span class="far fa-envelope"></span></a>
+      </div>
+      <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
+        <button class="navbar-toggler ml-auto" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+        </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+          <br>
+          <div class="dropdown-divider"></div>
+          <li class="nav-item">
+          <a class="nav-link" id="1" href="{{ url_for('index') }}"><span class="fas fa-home"></span>Home<span class="sr-only">(current)</span></a>
+          </li>
+          <div class="dropdown-divider"></div>
+          <li class="nav-item">
+          <a class="nav-link" id="1" href="{{ url_for('getting_started') }}"><span class="fas fa-question-circle"></span>Getting Started</a>
+          </li>
+          <div class="dropdown-divider"></div>
+          <li class="nav-item">
+          <a class="nav-link" id="1" href="{{ url_for('algorithms') }}"><span class="fas fa-calculator"></span>Algorithm Overview</a>
+          </li>
+          <div class="dropdown-divider"></div>
+          <li class="nav-item">
+          <a class="nav-link" id="1" href="{{ url_for('upload') }}"><span class="fas fa-file-upload"></span>Upload File</a>
+          </li>
+          <div class="dropdown-divider"></div>
+        </ul>
+      </div>
+      </nav>
+      <div class="container">
+        {% block content %}{% endblock %}
+      </div>  
+        
+<script>
+    function check_option() {
+    if(document.getElementById('select_graphics').value == "no"){
+        document.getElementById('plot-para').style.display = 'none';
+  } else {
+        document.getElementById('plot-para').style.display = 'block';
+    }
+}
+</script>        
+
+<script>
+// jQuery code to ensure filename appears upon .tsv file selection.
+$(document).ready(function(){
+   $(".custom-file-input").on("change", function() {
+      var fileName = $(this).val().split("\\").pop();
+      $(this).siblings(".custom-file-label").addClass("selected").html(fileName);
+   });
+});
+</script>
+
+<script>
+// jQuery code to validate file input field. It ensures the loading animation is displayed only upon form validation.
+$(document).ready(function(){
+ $('#uploadForm').validate({
+wrapper: 'div',
+  rules: {
+    file: {
+      required: true,
+      extension: "tsv"
+    }
+  },
+  
+  messages: {
+      file: {
+          required: "Please select a file.",
+          extension: "Please select a file with a .tsv extension."
+      }
+  },
+     
+  focusInvalid: false,
+     
+  errorPlacement: function(error, element){
+      error.appendTo("#js_errors");
+  },
+     
+  submitHandler: 
+   function(form, event) {
+       event.preventDefault();
+       $('#box').hide()
+       $('#preloader').show()
+       $('#uploadForm')[0].submit();    
+  }
+ });
+});
+</script>
+     
+<script>
+$('#customFile').on('mousedown', function(event) {
+    event.preventDefault();
+});        
+</script>
+
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  "fast-preview": {disabled: true},
+  tex2jax: {preview: "none", inlineMath: [['$','$'], ['\\(','\\)']]}
+});
+</script>
+        
+<script>
+// DataTables jQuery plugin to enable an interactive K-S relationship table.
+$(document).ready(function () {
+   $('#resTable').DataTable();
+});
+</script>
+    
+<script>
+// DataTables jQuery plugin to enable an interactive Kinase-Score table.
+$(document).ready(function () {
+   $('#linkTable').DataTable();
+});
+</script>
+        
+</body>
+</html>

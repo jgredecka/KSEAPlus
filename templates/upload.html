@@ -1,0 +1,64 @@
+{% extends "layout.html" %}
+{% block title %} {{title}} {% endblock %}
+{% block content %}
+
+<div id="preloader" class="text-center" style="display:none;">
+<div class="spinner-grow text-primary" role="status">
+</div><br>
+    <strong><p id="loading-text">Running algorithm...</p></strong>
+</div>
+<div class="row" id="box">
+    <div class="col-md">
+    <div id="js-errors">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        {% for message in messages %}
+          <p>{{ message }}</p>
+        {% endfor %}
+      {% endif %}
+     {% endwith %}
+    </div>
+    <div class="slide">
+    <div class="upload-border">
+    <form id="uploadForm" method = "POST" enctype = "multipart/form-data">
+      <p><strong>Select input dataset (.tsv)</strong></p>
+      <div class="custom-file mb-3">
+      <input type="file" class="custom-file-input form-control-sm" id="customFile" name="file">
+      <label class="custom-file-label form-control-sm" for="customFile" data-browse="Browse...">Choose file</label>
+    </div>
+      <br>
+      <p><strong>Select kinase-substrate database</strong></p>
+      {{ db_form.select_db(class="custom-select custom-select-sm") }}
+      <br><br>
+      <p><strong>Select KSEA algorithm</strong></p>
+      {{ alg_form.select_alg(class="custom-select custom-select-sm") }}
+      <br><br>
+      <p><strong>Generate a barplot/heatmap?</strong></p>
+      {{ plot_form.select_graphics(class="custom-select custom-select-sm", onchange="check_option();") }}
+      <br><br>
+      <div id="plot-para"> 
+      <p><strong>Plot parameters</strong></p>
+      <p>Minimum number of substrates:</p>
+      {{ sub_form.sub_choice(class="upload_form") }}
+      </div>
+      <br>
+      <button type="submit" class="btn btn-primary btn-sm btn-block">
+         <span class="fas fa-upload" id="upload-icon"></span>Upload
+      </button>
+    </form>
+    <br>
+    </div>
+    </div>
+    <br>
+    </div>
+<div class="col-md-7">
+   <p id="reminder">Prior to uploading your file, please ensure the following:</p>
+    <div class="check-points">
+    <p><span class="fas fa-check-double"></span>Your input dataset is of .tsv format. File extensions other than .tsv are not accepted.</p>
+    <p><span class="fas fa-check-double"></span>You have consulted the User Guide and example datasets (see <a href=" {{ url_for('getting_started') }} ">Getting Started</a>).</p>
+    <p><span class="fas fa-check-double"></span>Your input file contains values in units that are suitable for the algorithm of choice.</p>
+    <p><span class="fas fa-check-double"></span>Your dataset contains all of the required columns and contains no blank values.</p>
+</div>
+</div>
+</div>
+{% endblock %}
