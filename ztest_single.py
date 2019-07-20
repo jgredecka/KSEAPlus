@@ -1,5 +1,5 @@
 def userInput(df, min_sub, ks_db, graphics):
-
+    
     import io
     from io import StringIO
     import pandas as pd
@@ -12,15 +12,21 @@ def userInput(df, min_sub, ks_db, graphics):
         import matplotlib.patches as mpatches
         import matplotlib.pyplot as plt
 
-    # Function that returns the Kolmogorov-Smirnov test statistic along with the p-value.
-    # -log10 of p-value is also calculated for the barplot.
-    def ksTest(substrates, non_substrates):
-        result = st.ks_2samp(substrates, non_substrates)
-        ks_stat = result[0]
-        pval = result[1]
-        log_pval = np.log10(1/pval)
-        return ks_stat, pval, log_pval
-
+    # Function used to convert kinase z-scores to corresponding p-values.
+    def getpValue(z):
+        if z < 0:
+            p=st.norm.cdf(z)
+            return p
+        else:
+            dist=st.norm.cdf(z)
+            p=1.0 - dist
+            return p
+      
+    # Function to calculate the Z-score for each kinase.
+    def zScore(mean_kin, mean_all, sub_num, sd):
+        z = (mean_kin - mean_all) * sub_num**(1/2) / sd
+        return z
+    
     # User data is passed from the server and parsed as appropriate.
     user_file=df.values.tolist()
     array=[]
@@ -45,7 +51,7 @@ def userInput(df, min_sub, ks_db, graphics):
             else:
                 data.append([s, fc])
 
-    # Mapping of phosphosites to their (often multiple) log2(FC) values is achieved here.
+    # Mapping of phosphosites to their (often multiple) log2(FCs) is achieved here.
     dic={}
     for entry in data:
         site=entry[0]
@@ -55,32 +61,41 @@ def userInput(df, min_sub, ks_db, graphics):
         else:
             dic[site].append(fc)
 
-    # If the same phosphosite has been detected more than once, a mean log2(FC) is calculated for that phosphosite.
-    # Final array contains unique phosphosites and individual log2(FC) values, averaged where appropriate.
+    # If the same phosphosite has been detected more than once, a mean log2(FC) is calculated for it.
+    # Final array contains unique phosphosites and individual log2(FCs), averaged where appropriate.
     for key in dic:
         length=len(dic[key])
         mean_fc=sum(dic[key])/length
         dic[key] = float(mean_fc)
 
-    # Each phosphosite substrate in dic is scanned against the EDGES db. 
-    # If a match is found, relevant information for that phosphosite is appended to ks_links.
+    # The mean log2(FC) and the standard deviation of all phosphosites are calculated here.
+    # These values will be used to obtain the z-score for each kinase later on.
+    all_log2=[]    
+    for key in dic:
+        all_log2.append(dic[key])
+
+    all_mean=sum(all_log2) / float(len(all_log2))
+    all_std=np.std(all_log2)
+
+    # Each phosphosite in dic is scanned against the K-S db. 
+    # If a match is found, relevant information for that phosphosite is appended to a new array ks_links.
     ks_links=[]
     for x in dic:
         for y in ks_db:
             if x == y[0]:
-                ks_links.append([y[1], y[0], y[2], dic[x]])
+                ks_links.append([y[1], y[0], y[2], y[3], dic[x]])
             else:
                 continue
 
-    # The array is then converted into a dataframe to be viewed as a table.
-    ks_links_df = pd.DataFrame(ks_links, columns=["Kinase", "Site", "Source", "log2(FC)"])
+    # The array is then converted into a dataframe.
+    ks_links_df = pd.DataFrame(ks_links, columns=["Kinase", "Site", "Site.Seq(+/- 7AA)", "Source", "log2(FC)"])
 
-    # A dictionary containing unique kinases as keys and substrate FC as values is created.
-    # If the same kinase was identified for multiple substrates, multiple FCs are appended to the dictionary values.
+    # A dictionary containing unique kinases and substrate log2(FCs) as values is created.
+    # If the same kinase was identified for multiple substrates, multiple log2(FCs) are appended to the dictionary values.
     kinase_dic={}
     for match in ks_links:
         kinase=match[0]
-        log2fc=match[3]
+        log2fc=match[4]
         if kinase not in kinase_dic:
             kinase_dic[kinase]=[log2fc]
         else:
@@ -88,58 +103,46 @@ def userInput(df, min_sub, ks_db, graphics):
 
     # The dictionary is used to calculate the number of substrates identified for each unique kinase.
     # It also calculates the mean log2(FC) across each kinase's substrates.
-    # The algorithm computes a signed KS statistic, p-value and -log10(p-value) using substrate and non-substrate log2(FC) values.    
-    kol_smir_info=[]
-    for kinase in kinase_dic:
-        substrate_num=len(kinase_dic[kinase])
-        kin_fc_mean=sum(kinase_dic[kinase]) / float(substrate_num)
-        # Substrate names corresponding to a given kinase are extracted into a flat list.
-        # These will be used to identify all non-substrates conditionally. 
-        sub_df = ks_links_df.loc[ks_links_df['Kinase'] == kinase]
-        sub_names = sub_df['Site'].tolist()
-        # log2(FC) values for substrates.
-        sub_fc = kinase_dic[kinase]
-        # Non-substrates are located within the ks_links dataframe.
-        # A sub-dataframe containing non-substrates only is generated.
-        # log2(FC) values associated with the non-substrates are then stored in a new array.
-        non_sub_df=ks_links_df.loc[~ks_links_df['Site'].isin(sub_names)]
-        non_sub_df=non_sub_df.drop_duplicates(subset='Site')
-        non_sub_fc = non_sub_df['log2(FC)'].tolist()
-        # KS-test statistic and p-value for each kinase are calculated here for kinases with at least 3 substrates.
-        ks_stat, pval, log_pval = ksTest(sub_fc, non_sub_fc)
-        # -log10(p-val) and KS is signed based on the mean log2(FC) of the kinase.
-        if kin_fc_mean < 0:
-            log_pval = -log_pval
-            ks_stat = -ks_stat
-        # All relevant results are stored in a new array and converted into a dataframe.
-        kol_smir_info.append([kinase, substrate_num, kin_fc_mean, ks_stat, pval, log_pval])
+    # The algorithm then computes the z-score.
+    # A new array stores kinase gene, no. of substrates, mean log2(FC), z-score and p-value.
+    zscore_info=[]
+    for key in kinase_dic:
+        substrate_num = len(kinase_dic[key])
+        kin_fc_mean = sum(kinase_dic[key]) / float(substrate_num)
+        z_score = zScore(kin_fc_mean, all_mean, substrate_num, all_std)
+        z_pval = getpValue(z_score)
+        zscore_info.append([key, substrate_num, kin_fc_mean, z_score, z_pval])
 
-    # Results are converted into a dataframe.
-    kol_smir_df = pd.DataFrame(kol_smir_info, columns = ['Kinase', 'Sub.Count', 'mnlog2(FC)', '(+/-) KS', 'pVal', "(+/-) -log10(pVal)"])
+    # z-score array is converted into a pandas dataframe.
+    zscore_df=pd.DataFrame(zscore_info, columns=["Kinase", "Sub.Count", "mnlog2(FC)", "zSc", "pVal"])
 
     # Barplot is only generated if the user chose to produce graphics at file upload.
     if graphics == "no":
         svg_fig = "Barplot was not generated for this analysis."
     elif graphics == "yes":
-        # The array is sorted according to the -log10(p-value) to improve plot readability.
-        kol_smir_info.sort(key=lambda x: (str(type(x[5])), x[5]))
+        # For easier plot manipulation, the array is sorted in an ascending order according to the z-score.
+        zscore_info.sort(key=lambda x: float(x[3]))
+
+        # Kinase label for y-axis.
+        kinases = []
+
+        # Corresponding z-scores.
+        score_list = []
 
         # Extraction of desirable results that match user-defined parameters.
-        # min_sub denotes the minimum substrate count per kinase indicated by the user and must be >= 3.
-        kinases=[]
-        log_pvals=[]
-        for entry in kol_smir_info:
+        # min_sub denotes the minimum substrate count per kinase indicated by the user.
+        for entry in zscore_info:
             kin=entry[0]
             sub=entry[1]
-            logp = entry[5]
+            score = entry[3]
             if sub >= min_sub:
                 kinases.append(kin)
-                log_pvals.append(logp)
+                score_list.append(score)
 
         # Dictionary of kinases as keys and p-values as values. 
         # It will serve as a map for the colour coding of the barplot bars.
         kin_map={}
-        for entry in kol_smir_info:
+        for entry in zscore_info:
             kin=entry[0]
             pval=entry[4]
             kin_map[kin]=pval
@@ -173,7 +176,7 @@ def userInput(df, min_sub, ks_db, graphics):
         fig, ax = plt.subplots(figsize=(5, figheight))
 
         # Horizontal bars are generated.
-        ax.barh(y_pos, log_pvals, color=colours)
+        ax.barh(y_pos, score_list, color=colours)
 
         # Y-axis limit to reduce the top and bottom margin white spaces.
         plt.ylim(min(y_pos)-1, max(y_pos)+1)
@@ -187,7 +190,7 @@ def userInput(df, min_sub, ks_db, graphics):
         plt.yticks(fontsize=6)
         plt.xticks(fontsize=6)
         plt.ylabel("Kinase", fontsize=6)
-        plt.xlabel("(+/-) -log10(p-value)", fontsize=6)
+        plt.xlabel("Z-score", fontsize=6)
 
         # A legend to indicate the meaning of the bar colours.
         non_sig = mpatches.Patch(color="#b3b3b3", label='p-value >= 0.05')
@@ -204,5 +207,5 @@ def userInput(df, min_sub, ks_db, graphics):
         svg_fig = '<svg' + fig_file.getvalue().split('<svg')[1]
         # Free memory buffer.
         fig_file.close()
-
-    return kol_smir_df, ks_links_df, svg_fig
+    
+    return zscore_df, ks_links_df, svg_fig

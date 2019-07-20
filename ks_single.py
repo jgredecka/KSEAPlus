@@ -62,25 +62,25 @@ def userInput(df, min_sub, ks_db, graphics):
         mean_fc=sum(dic[key])/length
         dic[key] = float(mean_fc)
 
-    # Each phosphosite substrate in dic is scanned against the PDTS db. 
+    # Each phosphosite in dic is scanned against the K-S db. 
     # If a match is found, relevant information for that phosphosite is appended to ks_links.
     ks_links=[]
     for x in dic:
         for y in ks_db:
             if x == y[0]:
-                ks_links.append([y[1], y[0], y[2], dic[x]])
+                ks_links.append([y[1], y[0], y[2], y[3], dic[x]])
             else:
                 continue
 
     # The array is then converted into a dataframe to be viewed as a table.
-    ks_links_df = pd.DataFrame(ks_links, columns=["Kinase", "Site", "Source", "log2(FC)"])
+    ks_links_df = pd.DataFrame(ks_links, columns=["Kinase", "Site", "Site.Seq(+/- 7AA)", "Source", "log2(FC)"])
 
-    # A dictionary containing unique kinases as keys and substrate FC as values is created.
+    # A dictionary containing unique kinases as keys and substrate log2(FCs) as values is created.
     # If the same kinase was identified for multiple substrates, multiple FCs are appended to the dictionary values.
     kinase_dic={}
     for match in ks_links:
         kinase=match[0]
-        log2fc=match[3]
+        log2fc=match[4]
         if kinase not in kinase_dic:
             kinase_dic[kinase]=[log2fc]
         else:
@@ -114,7 +114,7 @@ def userInput(df, min_sub, ks_db, graphics):
         # All relevant results are stored in a new array and converted into a dataframe.
         kol_smir_info.append([kinase, substrate_num, kin_fc_mean, ks_stat, pval, log_pval])
 
-    # Results are converted into a dataframe.
+    # KSEA results are converted into a dataframe.
     kol_smir_df = pd.DataFrame(kol_smir_info, columns = ['Kinase', 'Sub.Count', 'mnlog2(FC)', '(+/-) KS', 'pVal', "(+/-) -log10(pVal)"])
 
     # Barplot is only generated if the user chose to produce graphics at file upload.
@@ -122,7 +122,7 @@ def userInput(df, min_sub, ks_db, graphics):
         svg_fig = "Barplot was not generated for this analysis."
     elif graphics == "yes":
         # The array is sorted according to the -log10(p-value) to improve plot readability.
-        kol_smir_info.sort(key=lambda x: (str(type(x[5])), x[5]))
+        kol_smir_info.sort(key=lambda x: float(x[5]))
 
         # Extraction of desirable results that match user-defined parameters.
         # min_sub denotes the minimum substrate count per kinase indicated by the user and must be >= 3.

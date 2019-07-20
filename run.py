@@ -42,7 +42,6 @@ edges_db = uploadEDGES()
 db_map = {"psp": psp_db, "pdts": pdts_db, "edges": edges_db}
 single_list = ["ztest_single", "karp_single", "ks_single"]
 multi_list = ["ztest_multi", "karp_multi", "ks_multi"]
-db_list = ["psp", "pdts", "edges"]
 
 # Function that checks if a file extension is valid. Must return the boolean 'true' to proceed.
 def allowed_file(filename):
@@ -62,7 +61,8 @@ class AlgForm(FlaskForm):
 class GraphicsForm(FlaskForm):
     choices = [("no", "No"), ("yes", "Yes")]
     select_graphics = SelectField(choices=choices)
-    
+
+# Plot parameters: minimum number of substrates per kinase.
 class SubForm(FlaskForm):
     sub_choice = IntegerField("substrate_count", default=5)
 
@@ -72,6 +72,7 @@ def index():
     return render_template("index.html", title="Home")
     
 # This route allows the user to upload a .tsv file and set various parameters.
+# User file is read in memory and passed to a relevant algorithm script.
 @app.route("/upload", methods = ['GET', 'POST'])
 def upload():
     db_form = DbForm()
@@ -85,6 +86,7 @@ def upload():
     if request.method == 'POST':
         file = request.files['file']
         if file and allowed_file(file.filename):
+            session.permanent = True
             f = file.read()
             stream = BytesIO()
             stream.write(f)
@@ -98,41 +100,40 @@ def upload():
             if select_alg.split("_")[1] == "single":
                 alg_list = single_list
                 for x in alg_list:
-                    for y in db_list:
-                        try:
-                            if select_alg == x and select_db == y:
-                                script = x + "_" + y
-                                mod = importlib.import_module(script)
-                                ks_db = db_map[y]
-                                score_df, links_df, session["svg_plot"] = mod.userInput(df, min_sub, ks_db, graphics)
-                                session["score_df"] = score_df.to_json(orient='split')
-                                session["links_df"] = links_df.to_json(orient='split')
-                                return redirect(url_for('single_results'))
-                            else:
-                                continue
-                        except(ValueError, TypeError):
-                            flash("An error has occured. Please check your dataset and plot parameters.")
-                            return redirect(url_for('upload'))
+                    try:
+                        if select_alg == x:
+                            script = x
+                            mod = importlib.import_module(script)
+                            ks_db = db_map[select_db]
+                            score_df, links_df, session["svg_plot"] = mod.userInput(df, min_sub, ks_db, graphics)
+                            session["score_df"] = score_df.to_json(orient='split')
+                            session["links_df"] = links_df.to_json(orient='split')
+                            return redirect(url_for('single_results'))
+                        else:
+                            continue
+                    except(ValueError, TypeError):
+                        flash("An error has occured. Please check your dataset and plot parameters.")
+                        return redirect(url_for('upload'))
             elif select_alg.split("_")[1] == "multi":
                 alg_list = multi_list
                 for x in alg_list:
-                    for y in db_list:
-                        try:
-                            if select_alg == x and select_db == y:
-                                script = x + "_" + y
-                                mod = importlib.import_module(script)
-                                ks_db = db_map[y]
-                                score_df, links_df, session["svg_plot"] = mod.userInput(df, min_sub, ks_db, graphics)
-                                session["score_df"] = score_df.to_json(orient='split')
-                                session["links_df"] = links_df.to_json(orient='split')
-                                return redirect(url_for('multi_results'))
-                            else:
-                                continue
-                        except(ValueError, TypeError):
-                            flash("An error has occured. Please check your dataset and plot parameters.")
-                            return redirect(url_for('upload'))
+                    try:
+                        if select_alg == x:
+                            script = x
+                            mod = importlib.import_module(script)
+                            ks_db = db_map[select_db]
+                            score_df, links_df, session["svg_plot"] = mod.userInput(df, min_sub, ks_db, graphics)
+                            session["score_df"] = score_df.to_json(orient='split')
+                            session["links_df"] = links_df.to_json(orient='split')
+                            return redirect(url_for('multi_results'))
+                        else:
+                            continue
+                    except(ValueError, TypeError):
+                        flash("An error has occured. Please check your dataset and plot parameters.")
+                        return redirect(url_for('upload'))
     return render_template("upload.html", title="Upload File", db_form=db_form, alg_form=alg_form, sub_form=sub_form, plot_form=plot_form)
 
+# Route for interactive single-sample-analysis results.
 @app.route("/results/single", methods=['GET', 'POST'])
 def single_results():
     barplot = session.get("svg_plot")
@@ -142,6 +143,7 @@ def single_results():
     links_data = pd.read_json(links_data, orient='split')
     return render_template("single_results.html", title="KSEA Results", score_data=score_data.to_html(index=False, classes = 'row-border hover stripe" id = "resTable').replace('border="1"','border="0"'), links_data=links_data.to_html(index=False, classes = 'row-border hover stripe" id = "linkTable').replace('border="1"','border="0"'), barplot=barplot)
 
+# Route for multiple-samples-analysis results.
 @app.route("/results/multi")
 def multi_results():
     heatmap = session.get("svg_plot")
@@ -163,41 +165,52 @@ def contact():
 # Here SVG data is encoded to bytes and written into the buffer.
 @app.route("/download/fig")
 def fig_download():
-    graph = session.get("svg_plot")
-    buffer = BytesIO()
-    buffer.write(graph.encode('utf-8'))
-    buffer.seek(0)
-    return send_file(buffer, mimetype='image/svg+xml', attachment_filename="plot.svg", as_attachment=True)
+    try:
+        graph = session.get("svg_plot")
+        buffer = BytesIO()
+        buffer.write(graph.encode('utf-8'))
+        buffer.seek(0)
+        return send_file(buffer, mimetype='image/svg+xml', attachment_filename="plot.svg", as_attachment=True)
+    except ValueError:
+        return render_template("timeout.html", title="Session expired")
 
+# Here kinase-score json string is converted back into a dataframe and then written into a proxy string buffer as a csv file. It is then encoded to downloadable bytes data.
 @app.route("/download/scores")
 def download_scores():
-    scores = session.get("score_df")
-    scores = pd.read_json(scores, orient='split')
-    proxy = StringIO()
-    scores.to_csv(proxy, index=False)
-    proxy.seek(0)
-    data=proxy.getvalue()
-    proxy.close()
-    byte_data=data.encode('utf-8')
-    buffer = BytesIO()
-    buffer.write(byte_data)
-    buffer.seek(0)
-    return send_file(buffer, mimetype='text/csv', attachment_filename="ksea_scores.csv", as_attachment=True)
+    try:
+        scores = session.get("score_df")
+        scores = pd.read_json(scores, orient='split')
+        proxy = StringIO()
+        scores.to_csv(proxy, index=False)
+        proxy.seek(0)
+        data=proxy.getvalue()
+        proxy.close()
+        byte_data=data.encode('utf-8')
+        buffer = BytesIO()
+        buffer.write(byte_data)
+        buffer.seek(0)
+        return send_file(buffer, mimetype='text/csv', attachment_filename="ksea_scores.csv", as_attachment=True)
+    except ValueError:
+        return render_template("timeout.html", title="Session expired")
     
+# Here, Kinase-Substrate-Relationships data is manipulated as above in order to be downloadable.
 @app.route("/download/links")
 def download_links():
-    links = session.get("links_df")
-    links = pd.read_json(links, orient='split')
-    proxy = StringIO()
-    links.to_csv(proxy, index=False)
-    proxy.seek(0)
-    data = proxy.getvalue()
-    proxy.close()
-    byte_data = data.encode('utf-8')
-    buffer = BytesIO()
-    buffer.write(byte_data)
-    buffer.seek(0)
-    return send_file(buffer, mimetype='text/csv', attachment_filename="ks_links.csv", as_attachment=True)
-
+    try:
+        links = session.get("links_df")
+        links = pd.read_json(links, orient='split')
+        proxy = StringIO()
+        links.to_csv(proxy, index=False)
+        proxy.seek(0)
+        data = proxy.getvalue()
+        proxy.close()
+        byte_data = data.encode('utf-8')
+        buffer = BytesIO()
+        buffer.write(byte_data)
+        buffer.seek(0)
+        return send_file(buffer, mimetype='text/csv', attachment_filename="ks_links.csv", as_attachment=True)
+    except ValueError:
+        return render_template("timeout.html", title="Session expired")
+    
 if __name__ == '__main__':
     app.run(host='0.0.0.0')

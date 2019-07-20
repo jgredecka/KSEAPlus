@@ -96,7 +96,7 @@ def userInput(df, min_sub, ks_db, graphics):
             mean_fc=sum(dic[key])/length
             dic[key] = float(mean_fc)
 
-        # Each phosphosite in the dictionary is scanned against the PSP K-S db. 
+        # Each phosphosite in the dictionary is scanned against the K-S db. 
         # If a match is found, relevant information for that phosphosite is retained.
         # Scanning is only done for the first column.
         if col == 1:

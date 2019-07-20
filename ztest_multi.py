@@ -1,5 +1,5 @@
 def userInput(df, min_sub, ks_db, graphics):
-
+    
     import io
     from io import StringIO
     import pandas as pd
@@ -32,7 +32,7 @@ def userInput(df, min_sub, ks_db, graphics):
         z = (mean_kin - mean_all) * sub_num**(1/2) / sd
         return z
     
-  # User data is passed from the server and parsed as appropriate.
+    # User data is passed from the server and parsed as appropriate.
     user_file = df.values.tolist()
     header = df.columns.values.tolist()
     col_length=len(header)
@@ -52,7 +52,7 @@ def userInput(df, min_sub, ks_db, graphics):
     heatmap_array=[]
     zscore_info=[]
     z_columns=["Kinase", "Sub.Count"]
-    ks_columns=["Kinase", "Site", "Source"]
+    ks_columns=["Kinase", "Site", "Site.Seq(+/- 7AA)", "Source"]
     heatmap_col=["Kinase"]
     # Columns 1 and onwards represent samples (e.g. cell lines).
     # For the current column (sample) a set of operations is performed. 
@@ -70,7 +70,7 @@ def userInput(df, min_sub, ks_db, graphics):
         z_columns.append("pVal." + curr_col)
         ks_columns.append("log2(FC)." + curr_col)
         heatmap_col.append(curr_col)
-        
+
         data=[]
         all_log2=[]
         # Multiple phosphosites separated by a colon are split here.
@@ -85,7 +85,7 @@ def userInput(df, min_sub, ks_db, graphics):
                     continue
                 else:
                     data.append([s, float(fc)])
-                    
+
         # Mapping of phosphosite substrate keys to their (often multiple) log2(FCs) is achieved here.
         for entry in data:
             site=entry[0]
@@ -94,21 +94,21 @@ def userInput(df, min_sub, ks_db, graphics):
                 dic[site]=[fc]
             else:
                 dic[site].append(fc)
-                
+
         # If the same phosphosite has been detected more than once, its mean log2(FC) is calculated.
         # Final dictionary contains unique phosphosites and individual log2(FC) values, averaged where appropriate.
         for key in dic:
             length=len(dic[key])
             mean_fc=sum(dic[key])/length
             dic[key] = float(mean_fc)
-            
+
         # For each sample, the mean log2(FC) and standard deviation of all phosphosites in the dataset are calculated here. These values will be used to obtain a z-score for each identified kinase later on.
         for key in dic:
             all_log2.append(dic[key])
         all_mean=sum(all_log2) / float(len(all_log2))
         all_std=np.std(all_log2)
-        
-        # Each phosphosite in the dictionary is scanned against the EDGES K-S db. 
+
+        # Each phosphosite in the dictionary is scanned against the K-S db. 
         # If a match is found, relevant information for that phosphosite is retained.
         # Scanning is only done for the first column.
         if col == 1:
@@ -116,9 +116,9 @@ def userInput(df, min_sub, ks_db, graphics):
                 for y in ks_db:
                     if x == y[0]:
                         # ks_links will be used to assign the current sample's log2(FCs) to each kinase later on.
-                        ks_links.append([y[1], y[0], y[2], dic[x]])
+                        ks_links.append([y[1], y[0], y[2], y[3], dic[x]])
                         # ks_info will contain kinase-substrate relationship info for each sample.
-                        ks_info.append([y[1], y[0], y[2], dic[x]])
+                        ks_info.append([y[1], y[0], y[2], y[3], dic[x]])
         # Once the first column is passed, new log2(FCs) are removed and/or appended to the original arrays for each sample.
         elif col > 1:
             for s in ks_links:
@@ -126,17 +126,17 @@ def userInput(df, min_sub, ks_db, graphics):
                 s.append(dic[s[1]])
             for k in ks_info:
                 k.append(dic[k[1]])
-                            
+
         # A dictionary containing unique kinases and substrate log2(FCs) is created.
         # If the same kinase was identified for multiple substrates, multiple log2(FCs) are appended to the dictionary values.
         for match in ks_links:
             kinase=match[0]
-            log2fc=match[3]
+            log2fc=match[4]
             if kinase not in kinase_dic:
                 kinase_dic[kinase]=[log2fc]
             else:
                 kinase_dic[kinase].append(log2fc)
-                
+
         # The dictionary is used to calculate the number of substrates identified for each kinase.
         # It also calculates the mean log2(FC) across each kinase's substrates.
         # The algorithm then computes the z-score.
@@ -168,13 +168,13 @@ def userInput(df, min_sub, ks_db, graphics):
                 zscore_info[index].append(kin_fc_mean)
                 zscore_info[index].append(z_score)
                 zscore_info[index].append(z_pval)
-        
+                
     # p-values for the heatmap annotation are extracted from a nested list into a flat list.
     pvalues=[]
     for entry in pval_map:
         for pval in entry:
-            pvalues.append(pval)
-    
+            pvalues.append(pval)            
+
     # Score and kinase-substrate relationships DFs are generated.
     zscore_df = pd.DataFrame(zscore_info, columns=z_columns)       
     ks_df = pd.DataFrame(ks_info, columns=ks_columns)

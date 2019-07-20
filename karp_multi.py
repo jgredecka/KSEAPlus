@@ -15,7 +15,7 @@ def userInput(df, min_sub, ks_db, graphics):
         from mpl_toolkits.axes_grid1.colorbar import colorbar
         import seaborn as sns
 
-    # Function to calculate total number of known phosphosites in the PDTS database for a given kinase.
+    # Function to calculate total number of known phosphosites in the database for a given kinase.
     def getTotalSub(kinase):
         counter=0
         for x in ks_db:
@@ -23,7 +23,7 @@ def userInput(df, min_sub, ks_db, graphics):
             if kinase == db_kinase:
                 counter+=1
         return counter
-
+    
     # Function to calculate the K-Score.
     def kScore(kin_sum, all_sum, sub_num, total_sub):
         kscore = (kin_sum/all_sum) * (sub_num/total_sub)**(1/2) * 10**6
@@ -48,7 +48,7 @@ def userInput(df, min_sub, ks_db, graphics):
     ks_info=[]
     heatmap_array=[]
     kscore_columns=["Kinase", "Sub.Count", "Total.Sub.Count"]
-    ks_columns=["Kinase", "Site", "Source"]
+    ks_columns=["Kinase", "Site", "Site.Seq(+/- 7AA)", "Source"]
     heatmap_col=["Kinase"]
     # Columns 1 and onwards represent samples (e.g. cell lines).
     # For the current column (sample) a set of operations is performed.
@@ -67,7 +67,6 @@ def userInput(df, min_sub, ks_db, graphics):
         heatmap_col.append(curr_col)
 
         data=[]
-        all_ints=[]
         all_ints=[]
         # Multiple phosphosites separated by a colon are split here.
         # This ensures each phosphosite substrate and the intensity value starts with a new line.
@@ -104,8 +103,8 @@ def userInput(df, min_sub, ks_db, graphics):
         for key in dic:
             all_ints.append(dic[key])
         sum_ints=sum(all_ints)
-
-        # Each phosphosite in the dictionary is scanned against the PDTS K-S db. 
+        
+        # Each phosphosite in the dictionary is scanned against the PSP K-S db. 
         # If a match is found, relevant information for that phosphosite is retained.
         # Scanning is only done for the first column.
         if col == 1:
@@ -113,9 +112,9 @@ def userInput(df, min_sub, ks_db, graphics):
                 for y in ks_db:
                     if x == y[0]:
                         # ks_links will be used to assign the current sample's intensity to each kinase later on.
-                        ks_links.append([y[1], y[0], y[2], dic[x]])
+                        ks_links.append([y[1], y[0], y[2], y[3], dic[x]])
                         # ks_info will contain kinase-substrate relationship info for each sample.
-                        ks_info.append([y[1], y[0], y[2], dic[x]])
+                        ks_info.append([y[1], y[0], y[2], y[3], dic[x]])
         # Once the first column is passed, new intensities are removed and/or appended to the original arrays for each sample.
         elif col > 1:
             for s in ks_links:
@@ -128,7 +127,7 @@ def userInput(df, min_sub, ks_db, graphics):
         # If the same kinase was identified for multiple substrates, multiple intensities are appended to the dictionary values.
         for match in ks_links:
             kinase=match[0]
-            intensity=match[3]
+            intensity=match[4]
             if kinase not in kinase_dic:
                 kinase_dic[kinase]=[intensity]
             else:
@@ -166,7 +165,6 @@ def userInput(df, min_sub, ks_db, graphics):
                     heatmap_array.append([kinase, kscore])
                 else:
                     heatmap_array[condition_ind].append(kscore)
-
 
     # Score and kinase-substrate relationships DFs are generated.
     kscore_df = pd.DataFrame(kscore_info, columns=kscore_columns)

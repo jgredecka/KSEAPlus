@@ -11,7 +11,7 @@ def userInput(df, min_sub, ks_db, graphics):
         import matplotlib.patches as mpatches
         import matplotlib.pyplot as plt
 
-    # Function to calculate total number of known phosphosites in the PSP database for a given kinase.
+    # Function to calculate total number of known phosphosites in the database for a given kinase.
     def getTotalSub(kinase):
         counter=0
         for x in ks_db:
@@ -75,33 +75,33 @@ def userInput(df, min_sub, ks_db, graphics):
         all_ints.append(dic[key])
     sum_ints=sum(all_ints)
 
-    # Each phosphosite substrate in dic is scanned against the EDGES K-S db. 
+    # Each phosphosite substrate in dic is scanned against the PSP K-S db. 
     # If a match is found, relevant information for that phosphosite is appended to a new array called ks_links.
     ks_links=[]
     for x in dic:
         for y in ks_db:
             if x == y[0]:
-                ks_links.append([y[1], y[0], y[2], dic[x]])
+                ks_links.append([y[1], y[0], y[2], y[3], dic[x]])
             else:
                 continue
 
     # The array is then converted into a dataframe to be viewed as a table.
-    ks_links_df = pd.DataFrame(ks_links, columns=["Kinase", "Site", "Source", "Ints"])
+    ks_links_df = pd.DataFrame(ks_links, columns=["Kinase", "Site", "Site.Seq(+/- 7AA)", "Source", "Ints"])
 
     # A dictionary containing unique kinases as keys and substrate intensities as values is created.
     # If the same kinase was identified for multiple substrates, multiple intensities are appended to the dictionary values.
     kinase_dic={}
     for match in ks_links:
         kinase=match[0]
-        intensity=match[3]
+        intensity=match[4]
         if kinase not in kinase_dic:
             kinase_dic[kinase]=[intensity]
         else:
             kinase_dic[kinase].append(intensity)
 
-    # The dictionary is used to calculate the number of substrates identified for each unique kinase.
+    # The dictionary is used to calculate the number of substrates identified for each kinase.
     # It also calculates the sum of intensities across each kinase's substrates.
-    # A predefined function computes the total substrate count in the PDTS db for each kinase.
+    # A predefined function computes the total substrate count in the PSP db for each kinase.
     # The algorithm then computes the k-score.
     # All information is appended to a new array.
     kscore_info=[]
@@ -110,7 +110,7 @@ def userInput(df, min_sub, ks_db, graphics):
         substrate_num = len(kinase_dic[kinase])
         # Sum of intensities of phosphosites associated with a given kinase.
         kin_ints_sum = sum(kinase_dic[kinase])
-        # Total number of sites in the PDTS database for a given kinase.
+        # Total number of sites in the PSP database for a given kinase.
         total_sub_num = getTotalSub(kinase)
         # Kinase 'K-Score' is calculated here.
         kscore = kScore(kin_ints_sum, sum_ints, substrate_num, total_sub_num)
@@ -119,7 +119,7 @@ def userInput(df, min_sub, ks_db, graphics):
 
     # k-score information array is converted into a dataframe.
     kscore_df=pd.DataFrame(kscore_info, columns=["Kinase", "Sub.Count", "Total.Sub.Count", "Sum.Ints", "kSc"])
-    
+
     # Barplot only generated if the user chose to produce graphics during file upload.
     if graphics == "no":
         svg_fig = "Barplot was not generated for this analysis."

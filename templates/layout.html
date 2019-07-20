@@ -8,9 +8,12 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.0/jquery.validate.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.0/dist/additional-methods.min.js"></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
-
     <title>{% block title %}{% endblock %} - KSEAPlus</title>
-    <meta charset="UTF-8" name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="author" content="Justyna Gredecka">
+    <meta name="keywords" content="ksea, kseaplus, kinase, substrate, enrichment, analysis, activity, quantification, z-test, karp, kolmogorov-smirnov, algorithm, phosphoproteomic">
+    <meta name="description" content="KSEAPlus is a computational tool that allows for the estimation of kinase activity from phosphoproteomic data on the basis of Kinase-Substrate-Enrichment-Analysis (KSEA) methods. Currently, KSEAPlus features an implementation of three kinase-substrate-relationship databases as well as three different KSEA algorithms, namely the Z-Test, KARP and Kolmogorov-Smirnov test.">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
@@ -20,7 +23,7 @@
   </head>
     <body>
       <div class="bg"><a href="{{ url_for('index') }}"><img id="svg-logo" src="{{ url_for('static', filename='images/logo/logo.svg') }}"></a>
-      <a href="#" data-toggle="tooltip" title="GitHub Source Code"><span class="fab fa-github"></span></a>
+      <a href="https://github.com/jgredecka/KSEAPlus" data-toggle="tooltip" title="GitHub Source Code"><span class="fab fa-github"></span></a>
       <a href="{{ url_for('contact') }}" data-toggle="tooltip" title="Contact Us"><span class="far fa-envelope"></span></a>
       </div>
       <nav class="navbar navbar-expand-lg navbar-dark bg-primary sticky-top">
@@ -55,6 +58,7 @@
       </div>  
         
 <script>
+// JavaScript function that displays the Plot Parameters box only if the user chose to generate graphics.
     function check_option() {
     if(document.getElementById('select_graphics').value == "no"){
         document.getElementById('plot-para').style.display = 'none';
@@ -65,7 +69,7 @@
 </script>        
 
 <script>
-// jQuery code to ensure filename appears upon .tsv file selection.
+// jQuery code to ensure file name is displayed upon .tsv file selection.
 $(document).ready(function(){
    $(".custom-file-input").on("change", function() {
       var fileName = $(this).val().split("\\").pop();
@@ -75,7 +79,7 @@ $(document).ready(function(){
 </script>
 
 <script>
-// jQuery code to validate file input field. It ensures the loading animation is displayed only upon form validation.
+// jQuery code to validate file input field. It also ensures the loading animation is displayed only upon form validation.
 $(document).ready(function(){
  $('#uploadForm').validate({
 wrapper: 'div',
@@ -116,6 +120,10 @@ $('#customFile').on('mousedown', function(event) {
 });        
 </script>
 
+
+<!--
+JavaScript formatting parameters for the MathJax (math equations) plugin. 
+-->
 <script type="text/x-mathjax-config">
 MathJax.Hub.Config({
   "fast-preview": {disabled: true},
@@ -136,6 +144,6 @@ $(document).ready(function () {
    $('#linkTable').DataTable();
 });
 </script>
-        
+  
 </body>
 </html>

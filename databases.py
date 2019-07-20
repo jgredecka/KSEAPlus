@@ -8,9 +8,9 @@ def uploadPSP():
         line=line.split("\t")
         sub=line[0]
         kin=line[3]
-        site_seq=line[6]
-        psp_source=line[7]
-        ks_data.append((sub, kin, site_seq, psp_source))
+        seq=line[6]
+        source=line[7]
+        ks_data.append((sub, kin, seq, source))
     pp_db.close()
     
     # In case the PSP database contains duplicates, these are removed here.
@@ -34,7 +34,8 @@ def uploadPDTS():
         kin=line[0]
         sub=line[1]
         source=line[5]
-        pdts_db.append([sub, kin, source])
+        seq = "n/a"
+        pdts_db.append([sub, kin, seq, source])
     pdtsdb.close()
     
     return pdts_db
@@ -51,7 +52,8 @@ def uploadEDGES():
         site = line[0]
         kin = line[1]
         source = line[2]
-        edges_db.append([site, kin, source])
+        seq = "n/a"
+        edges_db.append([site, kin, seq, source])
     edges.close()
     
     return edges_db
