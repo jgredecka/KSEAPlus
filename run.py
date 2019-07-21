@@ -7,7 +7,7 @@ import importlib
 import pandas as pd
 
 import redis
-from flask import Flask, flash, render_template, url_for, session, redirect, request, send_file
+from flask import Flask, flash, render_template, url_for, session, redirect, request, send_file, send_from_directory
 from flask_kvsession import KVSessionExtension
 from simplekv.memory.redisstore import RedisStore
 
@@ -160,6 +160,10 @@ def algorithms():
 @app.route("/contact")
 def contact():
     return render_template("contact.html", title="Contact")
+
+@app.route("/sitemap.xml")
+def sitemap():
+    return send_from_directory('static', filename='sitemap/sitemap.xml')
 
 # send_file requires BytesIO.
 # Here SVG data is encoded to bytes and written into the buffer.
