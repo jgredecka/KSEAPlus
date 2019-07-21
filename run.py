@@ -111,7 +111,7 @@ def upload():
                             return redirect(url_for('single_results'))
                         else:
                             continue
-                    except(ValueError, TypeError):
+                    except(ValueError, TypeError, AttributeError):
                         flash("An error has occured. Please check your dataset and plot parameters.")
                         return redirect(url_for('upload'))
             elif select_alg.split("_")[1] == "multi":
@@ -128,7 +128,7 @@ def upload():
                             return redirect(url_for('multi_results'))
                         else:
                             continue
-                    except(ValueError, TypeError):
+                    except(ValueError, TypeError, AttributeError):
                         flash("An error has occured. Please check your dataset and plot parameters.")
                         return redirect(url_for('upload'))
     return render_template("upload.html", title="Upload File", db_form=db_form, alg_form=alg_form, sub_form=sub_form, plot_form=plot_form)
