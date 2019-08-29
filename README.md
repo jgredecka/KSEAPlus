@@ -1,6 +1,6 @@
 # KSEAPlus
 
-KSEAPlus is a computational tool that implements a number of kinase activity inference algorithms to allow for the quantification of kinase activity from mass spectrometry-based phosphoproteomic data. KSEAPlus enables the analysis of multi-condition datasets. Currently offered algorithms include KSEA Z-Test, KARP and Kolmogorov-Smirnov test and. All algorithms can be run against one of three kinase-substrate databases: PhosphoSitePlus, PDTS and EDGES.
+KSEAPlus is a computational tool that implements a number of kinase activity inference algorithms to allow for the quantification of kinase activity from mass spectrometry-based phosphoproteomic data. KSEAPlus enables the analysis of multi-condition datasets. Currently offered algorithms include KSEA Z-Test, KARP and Kolmogorov-Smirnov test. All algorithms can be ran against one of three kinase-substrate databases: PhosphoSitePlus, PDTS and EDGES.
 
 # Availability
 
