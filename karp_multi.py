@@ -1,4 +1,4 @@
-def userInput(df, min_sub, ks_db, graphics):
+def userInput(ks_db, graphics, df, min_sub):
 
     import io
     from io import StringIO
@@ -29,6 +29,9 @@ def userInput(df, min_sub, ks_db, graphics):
         kscore = (kin_sum/all_sum) * (sub_num/total_sub)**(1/2) * 10**6
         return kscore
 
+    # Convert JSON-string datatset back into a DF.
+    df = pd.read_json(df, orient="split")
+    
     # User data is passed from the server and parsed as appropriate.
     user_file = df.values.tolist()
     header = df.columns.values.tolist()
@@ -239,5 +242,9 @@ def userInput(df, min_sub, ks_db, graphics):
         svg_fig = '<svg' + fig_file.getvalue().split('<svg')[1]
         # Free memory buffer.
         fig_file.close()
+    
+    # Convert results DFs into JSON strings.
+    kscore_df = kscore_df.to_json(orient='split')
+    ks_df = ks_df.to_json(orient='split')
     
     return kscore_df, ks_df, svg_fig

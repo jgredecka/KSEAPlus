@@ -15,8 +15,6 @@ def uploadPSP():
     
     # In case the PSP database contains duplicates, these are removed here.
     # Duplicate phosphosite entries are removed even if the reported sequence is different for each. Only one copy is retained.
-    #unique_ks=set(ks_data)
-    #ks_db=list(unique_ks)
     unique_ks=dict(((x[0], x[1]), x) for x in ks_data).values()
     psp_db=list(unique_ks)
     

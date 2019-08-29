@@ -1,4 +1,4 @@
-def userInput(df, min_sub, ks_db, graphics):
+def userInput(ks_db, graphics, df, min_sub):
     
     import io
     from io import StringIO
@@ -32,9 +32,12 @@ def userInput(df, min_sub, ks_db, graphics):
         z = (mean_kin - mean_all) * sub_num**(1/2) / sd
         return z
     
+    # Convert JSON-string datatset back into a DF.
+    f = pd.read_json(df, orient="split")
+    
     # User data is passed from the server and parsed as appropriate.
-    user_file = df.values.tolist()
-    header = df.columns.values.tolist()
+    user_file = f.values.tolist()
+    header = f.columns.values.tolist()
     col_length=len(header)
     array=[]
     for line in user_file:
@@ -261,4 +264,8 @@ def userInput(df, min_sub, ks_db, graphics):
         # Free memory buffer.
         fig_file.close()
 
+    # Convert results DFs into JSON strings.
+    zscore_df = zscore_df.to_json(orient='split')
+    ks_df = ks_df.to_json(orient='split')
+        
     return zscore_df, ks_df, svg_fig

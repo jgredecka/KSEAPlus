@@ -1,10 +1,20 @@
 from datetime import timedelta
 import os
 
-# 6 MB file upload limit
-MAX_CONTENT_LENGTH = 6 * 1024 * 1024
-# session expiry
-PERMANENT_SESSION_LIFETIME = timedelta(minutes=6)
-# secret key
-SECRET_KEY = os.urandom(24)
-DEBUG = True
+PERMANENT_SESSION_LIFETIME = timedelta(minutes=5)
+SECRET_KEY = 'your-secret-key'
+DEBUG = False
+REDIS_URL = 'redis://localhost:6379'
+CELERY_BROKER_URL = 'redis://localhost:6379'
+CELERY_RESULT_BACKEND = 'redis://localhost:6379'
+CELERY_IGNORE_RESULT = False
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_ALWAYS_EAGER = False
+CELERY_TASK_EAGER_PROPAGATES = False
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_ACCEPT_CONTENT = ['json']
+BROKER_POOL_LIMIT = 1
+BROKER_CONNECTION_MAX_RETRIES = None
+CELERYD_MAX_TASKS_PER_CHILD = 1
+
+

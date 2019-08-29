@@ -1,13 +1,14 @@
 import io
 from io import StringIO, BytesIO
 import os
-import uuid
+import sys
 from datetime import timedelta
 import importlib
 import pandas as pd
+import urllib.parse
 
 import redis
-from flask import Flask, flash, render_template, url_for, session, redirect, request, send_file, send_from_directory
+from flask import Flask, flash, render_template, url_for, session, redirect, request, send_file, send_from_directory, jsonify
 from flask_kvsession import KVSessionExtension
 from simplekv.memory.redisstore import RedisStore
 
@@ -16,19 +17,69 @@ from wtforms import SelectField, IntegerField
 
 from databases import uploadPSP, uploadPDTS, uploadEDGES
 import appconfig
+from celery import Celery
+from celery.result import AsyncResult
+from celery.signals import task_postrun
 
 # Set of allowed file extensions.
 ALLOWED_EXTENSIONS = set(['tsv'])
 
-store = RedisStore(redis.StrictRedis(host = '0.0.0.0', port = 6379, db = 0))
+sys.path.append(os.getcwd())
+
+# Create a redis instance with connection pool.
+redis_url = urllib.parse.urlparse(appconfig.REDIS_URL)
+store = RedisStore(redis.StrictRedis(host = redis_url.hostname, port = redis_url.port, password = redis_url.password, db = 0, socket_connect_timeout = 30, socket_timeout = 30, socket_keepalive=True, retry_on_timeout=True, health_check_interval=55))
 app = Flask(__name__)
 KVSessionExtension(store, app)
 
 # App configuration settings.
-app.max_content_length = appconfig.MAX_CONTENT_LENGTH
 app.permanent_session_lifetime = appconfig.PERMANENT_SESSION_LIFETIME
 app.secret_key = appconfig.SECRET_KEY
 app.debug = appconfig.DEBUG
+
+# Celery object for background tasks.
+def make_celery(app):
+    celery = Celery(
+        app.import_name,
+        backend=appconfig.CELERY_RESULT_BACKEND,
+        broker=appconfig.CELERY_BROKER_URL
+    )
+    celery.conf.update(app.config)
+    
+    class ContextTask(celery.Task):
+        def __call__(self, *args, **kwargs):
+            with app.app_context():
+                return self.run(*args, **kwargs)
+
+    celery.Task = ContextTask
+    return celery
+
+app.config.update(
+    CELERY_BROKER_URL = appconfig.REDIS_URL,
+    CELERY_RESULT_BACKEND = appconfig.REDIS_URL,
+    CELERY_IGNORE_RESULT = False,
+    CELERY_TASK_TRACK_STARTED = True,
+    CELERY_TASK_ALWAYS_EAGER = False,
+    CELERY_TASK_EAGER_PROPAGATES = False,
+    CELERY_TASK_SERIALIZER = 'json',
+    CELERY_ACCEPT_CONTENT = ['json'],
+    BROKER_POOL_LIMIT = 1,
+    CELERYD_MAX_TASKS_PER_CHILD = 1,
+    BROKER_CONNECTION_MAX_RETRIES = None
+)
+celery = make_celery(app)
+
+# Create a celery task for ksea analyses to run in background.
+@celery.task(name='tasks.run.runAlg')
+def runAlg(script, ks_db, graphics, df, min_sub):
+    mod = importlib.import_module(script)
+    return mod.userInput(ks_db, graphics, df, min_sub)
+
+# Attempts to free memory after each task.
+@task_postrun.connect 
+def gc_after_task(**kwargs):
+    import gc
+    gc.collect() 
 
 # Upload the PhosphoSitePlus database.
 psp_db = uploadPSP()
@@ -72,7 +123,7 @@ def index():
     return render_template("index.html", title="Home")
     
 # This route allows the user to upload a .tsv file and set various parameters.
-# User file is read in memory and passed to a relevant algorithm script.
+# A celery task is created and runAlg runs the algorithm in the bg.
 @app.route("/upload", methods = ['GET', 'POST'])
 def upload():
     db_form = DbForm()
@@ -84,70 +135,48 @@ def upload():
     sub_choice = None
     select_graphics = None
     if request.method == 'POST':
+        if int(request.content_length) > 5 * 1024 * 1024:
+            flash('Files larger than 5MB are not allowed.')
+            return redirect(url_for('upload'))
         file = request.files['file']
         if file and allowed_file(file.filename):
             session.permanent = True
+            session.regenerate()
             f = file.read()
             stream = BytesIO()
             stream.write(f)
             stream.seek(0)
             df = pd.read_csv(stream, sep="\t")
+            df=df.to_json(orient="split")
             stream.close()
             select_db = db_form.select_db.data
             select_alg = alg_form.select_alg.data
             min_sub = sub_form.sub_choice.data
             graphics = plot_form.select_graphics.data
-            if select_alg.split("_")[1] == "single":
+            alg_type = select_alg.split("_")[1]
+            if alg_type == "single":
                 alg_list = single_list
                 for x in alg_list:
-                    try:
-                        if select_alg == x:
-                            script = x
-                            mod = importlib.import_module(script)
-                            ks_db = db_map[select_db]
-                            score_df, links_df, session["svg_plot"] = mod.userInput(df, min_sub, ks_db, graphics)
-                            session["score_df"] = score_df.to_json(orient='split')
-                            session["links_df"] = links_df.to_json(orient='split')
-                            return redirect(url_for('single_results'))
-                        else:
-                            continue
-                    except(ValueError, TypeError, AttributeError):
-                        flash("An error has occured. Please check your dataset and plot parameters.")
-                        return redirect(url_for('upload'))
-            elif select_alg.split("_")[1] == "multi":
+                    if select_alg == x:
+                        script = x
+                        ks_db = db_map[select_db]
+                        res = runAlg.delay(script, ks_db, graphics, df, min_sub)
+                        taskid = res.task_id
+                        return redirect(url_for('show_results', alg_type=alg_type, taskid=taskid))
+                    else:
+                        continue
+            elif alg_type == "multi":
                 alg_list = multi_list
                 for x in alg_list:
-                    try:
-                        if select_alg == x:
-                            script = x
-                            mod = importlib.import_module(script)
-                            ks_db = db_map[select_db]
-                            score_df, links_df, session["svg_plot"] = mod.userInput(df, min_sub, ks_db, graphics)
-                            session["score_df"] = score_df.to_json(orient='split')
-                            session["links_df"] = links_df.to_json(orient='split')
-                            return redirect(url_for('multi_results'))
-                        else:
-                            continue
-                    except(ValueError, TypeError, AttributeError):
-                        flash("An error has occured. Please check your dataset and plot parameters.")
-                        return redirect(url_for('upload'))
+                    if select_alg == x:
+                        script = x
+                        ks_db = db_map[select_db]
+                        res = runAlg.delay(script, ks_db, graphics, df, min_sub)
+                        taskid = res.task_id
+                        return redirect(url_for('show_results', alg_type=alg_type, taskid=taskid))
+                    else:
+                        continue
     return render_template("upload.html", title="Upload File", db_form=db_form, alg_form=alg_form, sub_form=sub_form, plot_form=plot_form)
-
-# Route for interactive single-sample-analysis results.
-@app.route("/results/single", methods=['GET', 'POST'])
-def single_results():
-    barplot = session.get("svg_plot")
-    score_data = session.get("score_df")
-    score_data = pd.read_json(score_data, orient='split')
-    links_data = session.get("links_df")
-    links_data = pd.read_json(links_data, orient='split')
-    return render_template("single_results.html", title="KSEA Results", score_data=score_data.to_html(index=False, classes = 'row-border hover stripe" id = "resTable').replace('border="1"','border="0"'), links_data=links_data.to_html(index=False, classes = 'row-border hover stripe" id = "linkTable').replace('border="1"','border="0"'), barplot=barplot)
-
-# Route for multiple-samples-analysis results.
-@app.route("/results/multi")
-def multi_results():
-    heatmap = session.get("svg_plot")
-    return render_template("multi_results.html", title="KSEA Results", heatmap=heatmap)
 
 @app.route("/getting-started")   
 def getting_started():
@@ -165,24 +194,80 @@ def contact():
 def sitemap():
     return send_from_directory('static', filename='sitemap/sitemap.xml')
 
+@app.route("/test-results", methods=['GET', 'POST'])
+def get_results():
+    tries = 3
+    for attempt in range(tries):
+        try:
+            alg = request.args.get('alg')
+            taskid = request.args.get('taskid')
+            r = celery.AsyncResult(taskid)
+            if r.ready() == True and alg == 'single':
+                try:
+                    session.regenerate()
+                    result = r.result
+                    r.forget()
+                    scores = result[0]
+                    links = result[1]
+                    plot = result[2]
+                    session["scores"] = scores
+                    session["links"] = links
+                    session["plot"] = plot
+                    sdf = pd.read_json(scores, orient='split')
+                    ldf = pd.read_json(links, orient='split')
+                    score_tab=sdf.to_html(index=False, classes = 'row-border hover stripe" id = "resTable').replace('border="1"','border="0"')
+                    links_tab = ldf.to_html(index=False, classes = 'row-border hover stripe" id = "linkTable').replace('border="1"','border="0"')
+                    return jsonify({'plot':plot, 'scores':score_tab, 'links':links_tab, 'status': 'complete'})
+                except(ValueError, TypeError):
+                    r.forget()
+                    return jsonify({'err':'An error has occured. Please check your dataset and plot parameters.', 'status': 'error'})
+            elif r.ready() == True and alg == 'multi':
+                try:
+                    session.regenerate()
+                    result = r.result
+                    r.forget()
+                    scores = result[0]
+                    links = result[1]
+                    plot = result[2]
+                    session["scores"] = scores
+                    session["links"] = links
+                    session["plot"] = plot
+                    return jsonify({'plot':plot, 'scores': 'Kinase activity data available only as a downloadable .csv file.', 'links': 'K-S relationship data available only as a downloadable .csv file.', 'status': 'complete'})
+                except(ValueError, TypeError):
+                    r.forget()
+                    return jsonify({'err':'An error has occured. Please check your dataset and plot parameters.', 'status': 'error'})
+            else:
+                return jsonify({'status':'pending'})
+        except Exception as e:
+            if attempt < tries - 1:
+                continue
+            else:
+                raise
+
+@app.route("/ksea/<alg_type>/<taskid>", methods=['GET', 'POST'])
+def show_results(alg_type, taskid):
+    uid = taskid
+    placeholder=''
+    return render_template('test.html', placeholder=placeholder, alg_type=alg_type, taskid=taskid, title="KSEA Results", uid=uid)
+
 # send_file requires BytesIO.
 # Here SVG data is encoded to bytes and written into the buffer.
-@app.route("/download/fig")
-def fig_download():
+@app.route("/download/fig/<uid>")
+def fig_download(uid):
     try:
-        graph = session.get("svg_plot")
+        graph = session.get("plot")
         buffer = BytesIO()
         buffer.write(graph.encode('utf-8'))
         buffer.seek(0)
-        return send_file(buffer, mimetype='image/svg+xml', attachment_filename="plot.svg", as_attachment=True)
-    except ValueError:
+        return send_file(buffer, mimetype='image/svg+xml', attachment_filename="plot-"+uid+".svg", as_attachment=True)
+    except AttributeError:
         return render_template("timeout.html", title="Session expired")
 
 # Here kinase-score json string is converted back into a dataframe and then written into a proxy string buffer as a csv file. It is then encoded to downloadable bytes data.
-@app.route("/download/scores")
-def download_scores():
+@app.route("/download/scores/<uid>")
+def download_scores(uid):
     try:
-        scores = session.get("score_df")
+        scores = session.get("scores")
         scores = pd.read_json(scores, orient='split')
         proxy = StringIO()
         scores.to_csv(proxy, index=False)
@@ -193,15 +278,15 @@ def download_scores():
         buffer = BytesIO()
         buffer.write(byte_data)
         buffer.seek(0)
-        return send_file(buffer, mimetype='text/csv', attachment_filename="ksea_scores.csv", as_attachment=True)
+        return send_file(buffer, mimetype='text/csv', attachment_filename="ksea_scores-"+uid+".csv", as_attachment=True)
     except ValueError:
         return render_template("timeout.html", title="Session expired")
     
 # Here, Kinase-Substrate-Relationships data is manipulated as above in order to be downloadable.
-@app.route("/download/links")
-def download_links():
+@app.route("/download/links/<uid>")
+def download_links(uid):
     try:
-        links = session.get("links_df")
+        links = session.get("links")
         links = pd.read_json(links, orient='split')
         proxy = StringIO()
         links.to_csv(proxy, index=False)
@@ -212,9 +297,10 @@ def download_links():
         buffer = BytesIO()
         buffer.write(byte_data)
         buffer.seek(0)
-        return send_file(buffer, mimetype='text/csv', attachment_filename="ks_links.csv", as_attachment=True)
+        return send_file(buffer, mimetype='text/csv', attachment_filename="ks-links-"+uid+".csv", as_attachment=True)
     except ValueError:
         return render_template("timeout.html", title="Session expired")
     
+# Run in production
 if __name__ == '__main__':
-    app.run(host='0.0.0.0')
+    app.run()

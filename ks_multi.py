@@ -1,4 +1,4 @@
-def userInput(df, min_sub, ks_db, graphics):
+def userInput(ks_db, graphics, df, min_sub):
 
     import io
     from io import StringIO
@@ -25,6 +25,9 @@ def userInput(df, min_sub, ks_db, graphics):
         log_pval = np.log10(1/pval)
         return ks_stat, pval, log_pval
 
+    # Convert JSON-string datatset back into a DF.
+    df = pd.read_json(df, orient="split")
+    
     # User data is passed from the server and parsed as appropriate.
     user_file = df.values.tolist()
     header = df.columns.values.tolist()
@@ -283,4 +286,8 @@ def userInput(df, min_sub, ks_db, graphics):
         # Free memory buffer.
         fig_file.close()
 
+    # Convert results DFs into JSON strings.
+    kolsmir_df = kolsmir_df.to_json(orient='split')    
+    ksinfo_df = ksinfo_df.to_json(orient='split')
+    
     return kolsmir_df, ksinfo_df, svg_fig

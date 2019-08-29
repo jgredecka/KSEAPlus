@@ -2,14 +2,13 @@
 {% block title %} {{title}} {% endblock %}
 {% block content %}
 
-<div id="preloader" class="text-center" style="display:none;">
-<div class="spinner-grow text-primary" role="status">
-</div><br>
-    <strong><p id="loading-text">Running algorithm...</p></strong>
+<div id="redirect" class="text-center" style="display: none;">
+    <div class="spinner-border" role="status"></div>
+    <div id="loading-text">Redirecting...</div>
 </div>
 <div class="row" id="box">
     <div class="col-md">
-    <div id="js-errors">
+    <div id="js_errors">
     {% with messages = get_flashed_messages() %}
       {% if messages %}
         {% for message in messages %}

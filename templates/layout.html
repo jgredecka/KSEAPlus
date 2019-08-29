@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
-    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.js"></script>
+    <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.0/jquery.validate.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jquery-validation@1.19.0/dist/additional-methods.min.js"></script>
     <script src='https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js?config=TeX-MML-AM_CHTML' async></script>
@@ -13,9 +13,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="author" content="Justyna Gredecka">
     <meta name="keywords" content="ksea, kseaplus, kinase, substrate, enrichment, analysis, activity, quantification, z-test, karp, kolmogorov-smirnov, algorithm, phosphoproteomic">
-    <meta name="description" content="KSEAPlus is a computational tool that allows for the estimation of kinase activity from phosphoproteomic data on the basis of Kinase-Substrate-Enrichment-Analysis (KSEA) methods. Currently, KSEAPlus features an implementation of three kinase-substrate-relationship databases as well as three different KSEA algorithms, namely the Z-Test, KARP and Kolmogorov-Smirnov test.">
+    <meta name="description" content="KSEAPlus is a computational tool that allows for the estimation of kinase activity from phosphoproteomic data.">
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
-    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.19/css/jquery.dataTables.css">
+    <link rel="stylesheet" type="text/css" href="https:////cdn.datatables.net/1.10.19/css/jquery.dataTables.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/tables.css') }}">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.0/css/all.css" integrity="sha384-Mmxa0mLqhmOeaE8vgOSbKacftZcsNYDjQzuCOm6D02luYSzBG8vpaOykv9lFQ51Y" crossorigin="anonymous"> 
@@ -56,6 +56,46 @@
       <div class="container">
         {% block content %}{% endblock %}
       </div>  
+
+<script>
+function ajax_request() {
+if ($('div').is('.AjaxOnly')) {
+var task = $('#task-id').text()
+var alg = $('#alg-type').text()
+$('.ajax-loader').show()
+$.ajax({
+method: 'GET',
+url: '/test-results',
+dataType: 'json',
+cache: false,
+data: {'taskid': task, 'alg': alg},
+success: function(data){
+    
+    if (data.status == 'complete'){
+    $('.ajax-loader').hide()
+    $('#ajax-plot').html(data.plot)
+    $('#ajax-scores').html(data.scores)
+    scoreTable();
+    $('#ajax-links').html(data.links)
+    linkTable();
+    }
+    else if (data.status == 'error'){
+    $('.ksea-tabs').hide()
+    $('#task-error').html(data.err)
+    $('#task-error').show()
+    }
+    else { setTimeout(function() {ajax_request();}, 10000)
+   }
+  }
+ });
+ }
+}
+</script>        
+<script>
+$(document).ready(function(){
+    ajax_request();
+});
+</script>
         
 <script>
 // JavaScript function that displays the Plot Parameters box only if the user chose to generate graphics.
@@ -107,7 +147,7 @@ wrapper: 'div',
    function(form, event) {
        event.preventDefault();
        $('#box').hide()
-       $('#preloader').show()
+       $('#redirect').show()
        $('#uploadForm')[0].submit();    
   }
  });
@@ -120,7 +160,6 @@ $('#customFile').on('mousedown', function(event) {
 });        
 </script>
 
-
 <!--
 JavaScript formatting parameters for the MathJax (math equations) plugin. 
 -->
@@ -132,17 +171,17 @@ MathJax.Hub.Config({
 </script>
         
 <script>
-// DataTables jQuery plugin to enable an interactive K-S relationship table.
-$(document).ready(function () {
+// DataTables jQuery plugin to enable an interactive Kinase-Score table.
+function scoreTable() {
    $('#resTable').DataTable();
-});
+};
 </script>
     
 <script>
-// DataTables jQuery plugin to enable an interactive Kinase-Score table.
-$(document).ready(function () {
+// DataTables jQuery plugin to enable an interactive KS relationships table.
+function linkTable () {
    $('#linkTable').DataTable();
-});
+};
 </script>
   
 </body>
