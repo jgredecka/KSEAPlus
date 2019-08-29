@@ -194,6 +194,7 @@ def contact():
 def sitemap():
     return send_from_directory('static', filename='sitemap/sitemap.xml')
 
+# AJAX request sent every 10 seconds fetches task status and results (if ready) from this view.
 @app.route("/test-results", methods=['GET', 'POST'])
 def get_results():
     tries = 3
