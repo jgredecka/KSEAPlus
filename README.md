@@ -6,7 +6,7 @@ KSEAPlus is a computational tool that implements a number of kinase activity inf
 
 KSEAPlus is currently running on a free Heroku dyno: https://ksea-plus.herokuapp.com
 
-## Build With
+## Built With
 * Flask: serving as a Python web microframework.
 * Celery: background task manager for running the analyses in application background.
 * Gunicorn: acting as a WSGI server.
